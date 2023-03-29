@@ -1,0 +1,8 @@
+json
+itertools
+collections
+matplotlib
+hazm
+numpy
+pandas
+regex
