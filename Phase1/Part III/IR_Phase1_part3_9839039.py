@@ -1,4 +1,6 @@
 import json
+from string import punctuation
+
 from hazm import *
 import re
 
@@ -7,7 +9,7 @@ file_path = 'C:/Users/Samin/Desktop/University/Term 7/Information Retrieval/Proj
 try:
     with open(file_path, 'r', encoding='utf-8') as f:
         positional_index = json.load(f)
-        print("File opened successfully!")
+        print("Positional Index File opened successfully!")
 except IOError:
     print("Error opening file.")
 
@@ -16,7 +18,7 @@ file_path = 'C:/Users/Samin/Desktop/University/Term 7/Information Retrieval/Proj
 try:
     with open(file_path, 'r', encoding='utf-8') as f:
         data_raw = json.load(f)
-        print("File opened successfully!")
+        print("Origin File opened successfully!")
 except IOError:
     print("Error opening file.")
 
@@ -72,65 +74,103 @@ def toPrint(sorted_docs):
         docRank = sorted_docs[i][1]
         title = data[docID]['title']
         url = data[docID]['url']
-        print(f'{i+1}. DocID = {docID}  \n   Title = {title} \n   URL   = {url}')
+        print(f'{i + 1}. DocID = {docID}  \n   Title = {title} \n   URL   = {url}')
 
 
-def queryProcessor(query):
+def findRejected(query):
     # finding rejected terms
     rejected_terms = []
     if '!' in query:
         query_parts = query.split()
         for part in query_parts:
             if part.startswith('!'):
-                rejected_terms.append(part[1:])
-    print(f'Rejected terms : {rejected_terms}')
+                pure_rejected = re.sub(f'[{punctuation}؟،٪×÷»«]+', '', part[1:])
+                preprocessed_rejected = to_stem(to_remove_stop_words(to_tokenize(to_normalize(pure_rejected))))
+                rejected_terms.append(preprocessed_rejected)
+    return rejected_terms
 
-    # preprocess query
-    preprocessed = to_stem(to_remove_stop_words(to_tokenize(to_normalize(query))))
-    print(f'Preprocessed : {preprocessed}')
 
-    # finding accepted terms
-    accepted_terms = []
-    for term in preprocessed:
-        if term not in rejected_terms:
-            accepted_terms.append(term)
-    print(f'Accepted terms : {accepted_terms}')
+def findPhrases(query):
+    # finding phrases
+    phrases = []
+    phrases = re.findall('\".*?\"', query)
+    phrase_dic = []
+    for phrase in phrases:
+        pure_phrase = re.sub(f'[{punctuation}؟،٪×÷»«]+', '', phrase)
+        preprocessed_phrase = to_stem(to_remove_stop_words(to_tokenize(to_normalize(pure_phrase))))
+        phrase_dic.append(preprocessed_phrase)
+    return phrase_dic
+
+
+def findWords(query):
+    # Remove words in quotes
+    query = re.sub(r'"([^"]+)"', "", query)
+
+    # Remove words starting with !
+    query = re.sub(r'!\w+\s?', "", query)
+    words = query.strip()
+    words_list = []
+    pure_words = re.sub(f'[{punctuation}؟،٪×÷»«]+', '', words)
+    preprocessed_words = to_stem(to_remove_stop_words(to_tokenize(to_normalize(pure_words))))
+    words_list.append(preprocessed_words)
+    return words_list
+
+
+def queryProcessor(query):
+    # call funcs on query
+    rejected_terms = findRejected(query)
+    phrase_terms = findPhrases(query)
+    actual_terms = findWords(query)
+    print(f'Rejected list : {rejected_terms}')
+    print(f'Phrase list : {phrase_terms}')
+    print(f'Actual list : {actual_terms}')
 
     # scoring docs
     scores = {}
-    # part 1 - finding accepted terms
-    for term in accepted_terms:
-        if term in positional_index:
-            for docID, doc_data in positional_index[term].items():
-                if docID != 'total':
-                    if docID not in scores:
-                        scores[docID] = 5  # finding one accepted term
-                    else:
-                        scores[docID] += 5  # finding more than one accepted word
+    # part 1 - finding actual terms
+    for item in actual_terms:
+        for term in item:
+            if term in positional_index:
+                for docID, doc_data in positional_index[term].items():
+                    if docID != 'total':
+                        if docID not in scores:
+                            scores[docID] = 5  # finding one accepted term
+                        else:
+                            scores[docID] += 5  # finding more than one accepted word
 
-    # # part 2 - removing docs with rejected terms
-    # rejected_docs = []
-    # for term in rejected_terms:
-    #     if term in positional_index:
-    #         rejected_docs.extend(positional_index[term].keys())
-    # rejected_docs = set(rejected_docs)
-    # for docID in rejected_docs:
-    #     if docID in scores:
-    #         scores[docID] -= 3  # decrease score of docs with rejected terms
-    #
-    # # part 3 - distance of accepted terms
-    # for docID in scores:
-    #     positions = []
-    #     for term in accepted_terms:
-    #         if term in positional_index and docID in positional_index[term]:
-    #             positions.extend(positional_index[term][docID])
-    #     if len(positions) > 1:
-    #         count = sum([positions[i+1]-positions[i] for i in range(len(positions)-1)])
-    #         distance_score = 1/count
-    #         scores[docID] += distance_score
+    # part 2 - removing docs with rejected terms
+    rejected_docs = []
+    for item in rejected_terms:
+        # print(f'item = {item}')
+        for term in item:
+            # print(f'term : {term}')
+            if term in positional_index:
+                keys = positional_index[term].keys()
+                for key in keys:
+                    if key != 'total' and key not in rejected_docs:
+                        rejected_docs.append(key)
+            # print(f'Keys : {rejected_docs}')
+        for docID in rejected_docs:
+            if docID in scores:
+                scores[docID] = 0  # remove docs with rejected words
+
+    # part 3 - phrases scoring
+    for phrase in phrase_terms:
+        phrase_check = []
+        for term in phrase:
+            if term in positional_index:
+                if term not in phrase_check:
+                    phrase_check[term] = {}
+                phrase_check[term] = positional_index[term]
+        print(f'Phrase check : {phrase_check}')
+
+
 
     sorted_docs = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-    toPrint(sorted_docs)
+    if len(sorted_docs) > 0:
+        toPrint(sorted_docs)
+    else:
+        print('داده ای یافت نشد')
 
 
-queryProcessor('باشگاه های فوتبال آسیا')
+queryProcessor('لیست "لیگ برتر" !والیبال "مسابقات  کشوری زنده" در !ایران')
