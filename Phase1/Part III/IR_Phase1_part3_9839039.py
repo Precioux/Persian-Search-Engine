@@ -71,27 +71,42 @@ def queryProcessor(query):
             accepted_terms.append(term)
     print(f'Accepted terms : {accepted_terms}')
 
-    # excluding documents containing rejected terms
-    docs = positional_index.keys()
+    # scoring docs
+    scores = {}
+    # part 1 - finding accepted terms
+    for term in accepted_terms:
+        if term in positional_index:
+            for docID, doc_data in positional_index[term].items():
+                if docID != 'total':
+                    if docID not in scores:
+                        scores[docID] = 5  # finding one accepted term
+                    else:
+                        scores[docID] += 5  # finding more than one accepted word
+
+    # part 2 - removing docs with rejected terms
+    rejected_docs = []
     for term in rejected_terms:
         if term in positional_index:
-            docs = set(docs) - set(positional_index[term].keys())
+            rejected_docs.extend(positional_index[term].keys())
+    rejected_docs = set(rejected_docs)
+    for docID in rejected_docs:
+        if docID in scores:
+            scores[docID] -= 3  # decrease score of docs with rejected terms
 
-    # ranking documents based on max number of accepted terms
-    doc_scores = {}
-    for doc in docs:
-        doc_terms = []
+    # part 3 - distance of accepted terms
+    for docID in scores:
+        positions = []
         for term in accepted_terms:
-            if term in positional_index and doc in positional_index[term]:
-                doc_terms.append(term)
-        doc_scores[doc] = len(set(doc_terms))
+            if term in positional_index and docID in positional_index[term]:
+                positions.extend(positional_index[term][docID])
+        if len(positions) > 1:
+            count = sum([positions[i+1]-positions[i] for i in range(len(positions)-1)])
+            distance_score = 1/count
+            scores[docID] += distance_score
 
-    # sorting documents based on score
-    sorted_docs = sorted(doc_scores.items(), key=lambda x: x[1], reverse=True)
-
-    # returning top 10 documents
-    return sorted_docs[:10]
+    sorted_docs = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+    return sorted_docs
 
 
-#print(queryProcessor('باشگاه های فوتبال !آسیا'))
-print(positional_index)
+
+print(queryProcessor('باشگاه های فوتبال !آسیا'))
