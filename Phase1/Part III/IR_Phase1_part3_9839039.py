@@ -138,7 +138,38 @@ def queryProcessor(query):
                         else:
                             scores[docID] += 5  # finding more than one accepted word
 
-    # part 2 - removing docs with rejected terms
+
+    # part 2 - phrases scoring
+    for phrase in phrase_terms:
+        phrase_check = {}
+        for term in phrase:
+            if term in positional_index:
+                if term not in phrase_check:
+                    phrase_check[term] = set()
+                keys = positional_index[term].keys()
+                for key in keys:
+                    if key != 'total':
+                        phrase_check[term].add(key)
+
+        # Find the intersection of all documents containing each term in the phrase
+        common_docs = set.intersection(*phrase_check.values())
+
+        # Check if the terms in each common document are adjacent
+        for doc_id in common_docs:
+            print(f'DocId : {doc_id}')
+            positions = {}
+            for term in phrase:
+                print(f'checking term : {term}')
+                positions[term] = []
+                if doc_id in positional_index[term]:
+                    #print(f'positions : {positional_index[term][doc_id]['positions']}')
+                    positions[term].append(positional_index[term][doc_id]['positions'])
+            print(positions)
+            n = len(phrase)
+            check = 0
+            
+
+    # part 3 - removing docs with rejected terms
     rejected_docs = []
     for item in rejected_terms:
         # print(f'item = {item}')
@@ -154,23 +185,14 @@ def queryProcessor(query):
             if docID in scores:
                 scores[docID] = 0  # remove docs with rejected words
 
-    # part 3 - phrases scoring
-    for phrase in phrase_terms:
-        phrase_check = []
-        for term in phrase:
-            if term in positional_index:
-                if term not in phrase_check:
-                    phrase_check[term] = {}
-                phrase_check[term] = positional_index[term]
-        print(f'Phrase check : {phrase_check}')
-
-
 
     sorted_docs = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+
+
     if len(sorted_docs) > 0:
         toPrint(sorted_docs)
     else:
         print('داده ای یافت نشد')
 
 
-queryProcessor('لیست "لیگ برتر" !والیبال "مسابقات  کشوری زنده" در !ایران')
+queryProcessor('"لیگ برتر" !والیبال')
