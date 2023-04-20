@@ -1,5 +1,4 @@
 import json
-
 #opening preprocessed file
 file_path = 'C:/Users/Samin/Desktop/University/Term 7/Information Retrieval/Project/Data/IR_data_news_12k_preprocessed.json'
 
