@@ -138,7 +138,6 @@ def queryProcessor(query):
                         else:
                             scores[docID] += 5  # finding more than one accepted word
 
-
     # part 2 - phrases scoring
     for phrase in phrase_terms:
         phrase_check = {}
@@ -162,12 +161,24 @@ def queryProcessor(query):
                 print(f'checking term : {term}')
                 positions[term] = []
                 if doc_id in positional_index[term]:
-                    #print(f'positions : {positional_index[term][doc_id]['positions']}')
+                    # print(f'positions : {positional_index[term][doc_id]['positions']}')
                     positions[term].append(positional_index[term][doc_id]['positions'])
             print(positions)
-            n = len(phrase)
-            check = 0
-            
+            print(f'len = {len(phrase)}')
+            check = 1
+            print(positions[phrase[0]])
+            for item in positions[phrase[0]]:
+                for position in item:
+                    for i in range(1, len(phrase)):
+                        p = position + i
+                        for item2 in positions[phrase[i]]:
+                            if p in item2:
+                                check = check + 1
+                print(f'check : {check}')
+            if check>1:
+                if doc_id not in scores:
+                    scores[doc_id] = 0
+                scores[doc_id] +=check
 
     # part 3 - removing docs with rejected terms
     rejected_docs = []
@@ -185,9 +196,7 @@ def queryProcessor(query):
             if docID in scores:
                 scores[docID] = 0  # remove docs with rejected words
 
-
     sorted_docs = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-
 
     if len(sorted_docs) > 0:
         toPrint(sorted_docs)
@@ -195,4 +204,4 @@ def queryProcessor(query):
         print('داده ای یافت نشد')
 
 
-queryProcessor('"لیگ برتر" !والیبال')
+queryProcessor('گزارش خبرگزاری فارس درباره "فولاد مبارکه سپاهان" !والیبال')
