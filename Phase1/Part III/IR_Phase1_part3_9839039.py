@@ -11,6 +11,22 @@ try:
 except IOError:
     print("Error opening file.")
 
+# Opening origin file
+file_path = 'C:/Users/Samin/Desktop/University/Term 7/Information Retrieval/Project/Data/IR_data_news_12k.json'
+try:
+    with open(file_path, 'r', encoding='utf-8') as f:
+        data_raw = json.load(f)
+        print("File opened successfully!")
+except IOError:
+    print("Error opening file.")
+
+data = {}
+for docID, body in data_raw.items():
+    data[docID] = {}
+    data[docID]['title'] = body['title']
+    data[docID]['content'] = body['content']
+    data[docID]['url'] = body['url']
+
 
 # preprocessing functions
 def to_normalize(input_text):
@@ -50,6 +66,15 @@ def to_stem(input_text):
     return output_text
 
 
+def toPrint(sorted_docs):
+    for i in range(0, 5):
+        docID = sorted_docs[i][0]
+        docRank = sorted_docs[i][1]
+        title = data[docID]['title']
+        url = data[docID]['url']
+        print(f'{i+1}. DocID = {docID}  \n   Title = {title} \n   URL   = {url}')
+
+
 def queryProcessor(query):
     # finding rejected terms
     rejected_terms = []
@@ -83,30 +108,29 @@ def queryProcessor(query):
                     else:
                         scores[docID] += 5  # finding more than one accepted word
 
-    # part 2 - removing docs with rejected terms
-    rejected_docs = []
-    for term in rejected_terms:
-        if term in positional_index:
-            rejected_docs.extend(positional_index[term].keys())
-    rejected_docs = set(rejected_docs)
-    for docID in rejected_docs:
-        if docID in scores:
-            scores[docID] -= 3  # decrease score of docs with rejected terms
-
-    # part 3 - distance of accepted terms
-    for docID in scores:
-        positions = []
-        for term in accepted_terms:
-            if term in positional_index and docID in positional_index[term]:
-                positions.extend(positional_index[term][docID])
-        if len(positions) > 1:
-            count = sum([positions[i+1]-positions[i] for i in range(len(positions)-1)])
-            distance_score = 1/count
-            scores[docID] += distance_score
+    # # part 2 - removing docs with rejected terms
+    # rejected_docs = []
+    # for term in rejected_terms:
+    #     if term in positional_index:
+    #         rejected_docs.extend(positional_index[term].keys())
+    # rejected_docs = set(rejected_docs)
+    # for docID in rejected_docs:
+    #     if docID in scores:
+    #         scores[docID] -= 3  # decrease score of docs with rejected terms
+    #
+    # # part 3 - distance of accepted terms
+    # for docID in scores:
+    #     positions = []
+    #     for term in accepted_terms:
+    #         if term in positional_index and docID in positional_index[term]:
+    #             positions.extend(positional_index[term][docID])
+    #     if len(positions) > 1:
+    #         count = sum([positions[i+1]-positions[i] for i in range(len(positions)-1)])
+    #         distance_score = 1/count
+    #         scores[docID] += distance_score
 
     sorted_docs = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-    return sorted_docs
+    toPrint(sorted_docs)
 
 
-
-print(queryProcessor('باشگاه های فوتبال !آسیا'))
+queryProcessor('باشگاه های فوتبال آسیا')
