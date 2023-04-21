@@ -4,77 +4,78 @@ from string import punctuation
 from hazm import *
 import re
 
-# Opening positional index file
-file_path = 'C:/Users/Samin/Desktop/University/Term 7/Information Retrieval/Project/Data/IR_data_news_12k_positional_index_dic.json'
-try:
-    with open(file_path, 'r', encoding='utf-8') as f:
-        positional_index = json.load(f)
-        print("Positional Index File opened successfully!")
-except IOError:
-    print("Error opening file.")
-
-# Opening origin file
-file_path = 'C:/Users/Samin/Desktop/University/Term 7/Information Retrieval/Project/Data/IR_data_news_12k.json'
-try:
-    with open(file_path, 'r', encoding='utf-8') as f:
-        data_raw = json.load(f)
-        print("Origin File opened successfully!")
-except IOError:
-    print("Error opening file.")
-
 data = {}
-for docID, body in data_raw.items():
-    data[docID] = {}
-    data[docID]['title'] = body['title']
-    data[docID]['content'] = body['content']
-    data[docID]['url'] = body['url']
+positional_index = {}
+
+def openFiles():
+    global data,positional_index
+    # Opening positional index file
+    file_path = 'C:/Users/Samin/Desktop/University/Term 7/Information Retrieval/Project/Data/IR_data_news_12k_positional_index_dic.json'
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            positional_index = json.load(f)
+            print("Positional Index File opened successfully!")
+    except IOError:
+        print("Error opening file.")
+
+    # Opening origin file
+    file_path = 'C:/Users/Samin/Desktop/University/Term 7/Information Retrieval/Project/Data/IR_data_news_12k.json'
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            data_raw = json.load(f)
+            print("Origin File opened successfully!")
+    except IOError:
+        print("Error opening file.")
+
+    for docID, body in data_raw.items():
+        data[docID] = {}
+        data[docID]['title'] = body['title']
+        data[docID]['content'] = body['content']
+        data[docID]['url'] = body['url']
 
 
 # preprocessing functions
 def to_normalize(input_text):
-    # print('Normalization..')
     output_text = Normalizer().normalize(input_text)
-    # print(f'input : {input_text} ')
-    # print(f'output : {output_text}')
     return output_text
 
 
 def to_tokenize(input_text):
-    # print('Tokenizing...')
     # remove all non-alphanumeric characters from the input_text
     input_text = re.sub(r'[^\w\s]', '', input_text)
     # tokenize the cleaned text
     output_text = word_tokenize(input_text)
-    # print(f'input : {input_text} ')
-    # print(f'output : {output_text}')
     return output_text
 
 
 def to_remove_stop_words(input_text):
-    # print('Removing Stop Words..')
     stop_words = stopwords_list()
     output_text = [word for word in input_text if not word in stop_words]
-    # print(f'input : {input_text} ')
-    # print(f'output : {output_text}')
     return output_text
 
 
 def to_stem(input_text):
-    # print('Stemming...')
     stemmer = Stemmer()
     output_text = [stemmer.stem(word) for word in input_text]
-    # print(f'input : {input_text} ')
-    # print(f'output : {output_text}')
     return output_text
 
 
 def toPrint(sorted_docs):
-    for i in range(0, 5):
-        docID = sorted_docs[i][0]
-        docRank = sorted_docs[i][1]
-        title = data[docID]['title']
-        url = data[docID]['url']
-        print(f'{i + 1}. DocID = {docID}  \n   Title = {title} \n   URL   = {url}')
+    global data
+    if len(sorted_docs)>100:
+        for i in range(0, 5):
+            docID = sorted_docs[i][0]
+            docScore = sorted_docs[i][1]
+            title = data[docID]['title']
+            url = data[docID]['url']
+            print(f'{i + 1}. DocID = {docID}  \n   Title = {title} \n   URL   = {url}\n   Score = {docScore}')
+    else:
+        for i in range(0, len(sorted_docs)):
+            docID = sorted_docs[i][0]
+            title = data[docID]['title']
+            docScore = sorted_docs[i][1]
+            url = data[docID]['url']
+            print(f'{i + 1}. DocID = {docID}  \n   Title = {title} \n   URL   = {url}\n   Score = {docScore}')
 
 
 def findRejected(query):
@@ -117,6 +118,7 @@ def findWords(query):
 
 
 def queryProcessor(query):
+    global data,positional_index
     # call funcs on query
     rejected_terms = findRejected(query)
     phrase_terms = findPhrases(query)
@@ -155,18 +157,12 @@ def queryProcessor(query):
 
         # Check if the terms in each common document are adjacent
         for doc_id in common_docs:
-            print(f'DocId : {doc_id}')
             positions = {}
             for term in phrase:
-                print(f'checking term : {term}')
                 positions[term] = []
                 if doc_id in positional_index[term]:
-                    # print(f'positions : {positional_index[term][doc_id]['positions']}')
                     positions[term].append(positional_index[term][doc_id]['positions'])
-            print(positions)
-            print(f'len = {len(phrase)}')
             check = 1
-            print(positions[phrase[0]])
             for item in positions[phrase[0]]:
                 for position in item:
                     for i in range(1, len(phrase)):
@@ -174,27 +170,24 @@ def queryProcessor(query):
                         for item2 in positions[phrase[i]]:
                             if p in item2:
                                 check = check + 1
-                print(f'check : {check}')
-            if check>1:
+
+            if check > 1:
                 if doc_id not in scores:
                     scores[doc_id] = 0
-                scores[doc_id] +=check
+                scores[doc_id] += check
 
     # part 3 - removing docs with rejected terms
     rejected_docs = []
     for item in rejected_terms:
-        # print(f'item = {item}')
         for term in item:
-            # print(f'term : {term}')
             if term in positional_index:
                 keys = positional_index[term].keys()
                 for key in keys:
                     if key != 'total' and key not in rejected_docs:
                         rejected_docs.append(key)
-            # print(f'Keys : {rejected_docs}')
         for docID in rejected_docs:
             if docID in scores:
-                scores[docID] = 0  # remove docs with rejected words
+                del scores[docID] # remove docs with rejected words
 
     sorted_docs = sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
@@ -204,4 +197,11 @@ def queryProcessor(query):
         print('داده ای یافت نشد')
 
 
-queryProcessor('گزارش خبرگزاری فارس درباره "فولاد مبارکه سپاهان" !والیبال')
+def main():
+    inputQ = input('Enter Query : ')
+    openFiles()
+    queryProcessor(inputQ)
+
+
+if __name__ == "__main__":
+    main()
