@@ -140,41 +140,42 @@ def calc_vectors(query):
 
 def cosine_similarity(query_vector, doc_vectors):
     similarities = {}
-    for docID,doc_vector in doc_vectors.items():
-        print(f'Docid : {docID}')
+    # print(f'q vec : {query_vector}')
+    for docID, doc_vector in doc_vectors.items():
+        # print(f'doc : {docID}')
+        # print(f'doc vec : {doc_vector}')
         dot_product = 0
         a2 = 0
         b2 = 0
         # Calculate dot product and a2 b2
         for i in range(len(query_vector)):
+            # print(f'i : {i}')
             dot_product += query_vector[i] * doc_vector[i]
-            a2 = query_vector[i] * query_vector[i]
-            b2 = doc_vector[i] * doc_vector[i]
+            # print(f'query_vector[i] {query_vector[i]} doc_vector[i] {doc_vector[i]} dot_product {dot_product}')
+            a2 += query_vector[i] * query_vector[i]
+            # print(f'a2 : {a2}')
+            b2 += doc_vector[i] * doc_vector[i]
+            # print(f'b2 : {b2}')
 
         cosine = dot_product / (math.sqrt(a2) + math.sqrt(b2))
-        print(f'Cosine : {cosine}')
+        # print(f'cosine : {cosine}')
+        similarities[docID] = cosine
 
-    # # Calculate cosine similarity between query vector and each document vector
-    # for docID, doc_vector in doc_vectors:
-    #     dot_product = 0
-    #
-    #     # Calculate dot product and vector norms
-    #     for term in query_vector:
-    #         if term in doc_vector:
-    #             dot_product += query_vector[term] * doc_vector[term]
-    #         query_norm += query_vector[term] ** 2
-    #     for term in doc_vector:
-    #         doc_norm += doc_vector[term] ** 2
-    #
-    #     # Calculate cosine similarity
-    #     if query_norm != 0 and doc_norm != 0:
-    #         similarity = dot_product / (math.sqrt(query_norm) * math.sqrt(doc_norm))
-    #         similarities[doc_id] = similarity
-    #
-    # # Sort the similarities in descending order
-    # sorted_similarities = sorted(similarities.items(), key=lambda x: x[1], reverse=True)
+    # Sort the similarities in descending order
+    sorted_similarities = sorted(similarities.items(), key=lambda x: x[1], reverse=True)
 
-    # return sorted_similarities
+    return sorted_similarities
+
+
+def toPrint(sorted_docs):
+    global data
+    i = 0
+    for docID, score in sorted_docs:
+        print(f'docID : {docID} , score : {score}')
+        title = data[docID]['title']
+        url = data[docID]['url']
+        print(f'{i + 1}. DocID = {docID}  \n   Title = {title} \n   URL   = {url}')
+        i += 1
 
 
 def queryProcessor(query):
@@ -184,8 +185,6 @@ def queryProcessor(query):
     preprocessed_query = to_stem(to_remove_stop_words(to_tokenize(to_normalize(preprocessed_query_1))))
     # calculating tf-idf
     query_tfidf = calculate_query_vector(preprocessed_query)
-    print('Query tf-idf:')
-    print(query_tfidf)
     # calculating available docs tf-idf
     docs_vectors = []
     docs_vectors = calc_vectors(query_tfidf)
@@ -196,7 +195,9 @@ def queryProcessor(query):
     normalized_docs_vector = {}
     for docID, vector in docs_vectors.items():
         normalized_docs_vector[docID] = normalize_vector(vector)
-    cosine_similarity(normalized_query_vector,normalized_docs_vector)
+    c_sim = cosine_similarity(normalized_query_vector, normalized_docs_vector)
+    print(c_sim)
+    toPrint(c_sim)
 
 
 def main():
