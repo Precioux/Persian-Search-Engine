@@ -6,6 +6,8 @@ import re
 
 data = {}
 positional_index_dic = {}
+data_preprocessed = {}
+docs = {}
 postings_list = {}
 N = 0
 
@@ -18,7 +20,7 @@ def tf_idf(nt, ftd):
 
 
 def openFiles():
-    global data, positional_index_dic, N, postings_list
+    global data, positional_index_dic, N, postings_list,data_preprocessed,docs
     # Opening positional index file
     file_path = 'C:/Users/Samin/Desktop/University/Term 7/Information Retrieval/Project/Data/IR_data_news_12k_positional_index_dic.json'
     try:
@@ -37,6 +39,18 @@ def openFiles():
     except IOError:
         print("Error opening file.")
 
+    # Opening preprocessed file
+    file_path = 'C:/Users/Samin/Desktop/University/Term 7/Information Retrieval/Project/Data/IR_data_news_12k_preprocessed.json'
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            data_preprocessed = json.load(f)
+            print("Origin File opened successfully!")
+    except IOError:
+        print("Error opening file.")
+
+    for docID,data in data_preprocessed.items():
+        docs[docID]= data['content']
+
     for docID, body in data_raw.items():
         N = N + 1
         data[docID] = {}
@@ -45,7 +59,8 @@ def openFiles():
         data[docID]['url'] = body['url']
 
     for term, postings in positional_index_dic.items():
-        postings_list[term] = []
+        if term not in postings_list:
+            postings_list[term] = []
         nt = postings['total']['count']
         for docID, data in postings.items():
             if docID != 'total':
@@ -107,22 +122,61 @@ def calculate_query_vector(query):
 
     return query_vector
 
+def calc_vectors(query):
+    global docs,postings_list
+    
+
+
+
+
+def cosine_similarity(query_vector):
+    global postings_list
+    similarities = {}
+
+    # Calculate cosine similarity between query vector and each document vector
+    for doc_id, doc_vector in postings_list.items():
+        dot_product = 0
+        query_norm = 0
+        doc_norm = 0
+
+        # Calculate dot product and vector norms
+        for term in query_vector:
+            if term in doc_vector:
+                dot_product += query_vector[term] * doc_vector[term]
+            query_norm += query_vector[term] ** 2
+        for term in doc_vector:
+            doc_norm += doc_vector[term] ** 2
+
+        # Calculate cosine similarity
+        if query_norm != 0 and doc_norm != 0:
+            similarity = dot_product / (math.sqrt(query_norm) * math.sqrt(doc_norm))
+            similarities[doc_id] = similarity
+
+    # Sort the similarities in descending order
+    sorted_similarities = sorted(similarities.items(), key=lambda x: x[1], reverse=True)
+
+    return sorted_similarities
+
 
 def queryProcessor(query):
     global data, positional_index_dic, postings_list
     # preprocess query
     preprocessed_query_1 = re.sub(f'[{punctuation}؟،٪×÷»«]+', '', query)
     preprocessed_query = to_stem(to_remove_stop_words(to_tokenize(to_normalize(preprocessed_query_1))))
+    # calculating tf-idf
     query_tfidf = calculate_query_vector(preprocessed_query)
     print('Query tf-idf:')
     print(query_tfidf)
-
+    # calculating available docs tf-idf
+    docs_vectors = []
+    docs_vectors = calc_vectors(preprocessed_query)
 
 
 def main():
-    inputQ = input('Enter Query : ')
+    # inputQ = input('Enter Query : ')
     openFiles()
-    queryProcessor(inputQ)
+    # queryProcessor(inputQ)
+    print(data_preprocessed.get('0'))
 
 
 if __name__ == "__main__":
