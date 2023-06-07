@@ -7,8 +7,6 @@ import math
 
 data = {}
 positional_index_dic = {}
-data_preprocessed = {}
-docs = {}
 postings_list = {}
 N = 0
 
@@ -21,7 +19,7 @@ def tf_idf(nt, ftd):
 
 
 def openFiles():
-    global data, positional_index_dic, N, postings_list, data_preprocessed, docs
+    global data, positional_index_dic, N, postings_list
     # Opening positional index file
     file_path = 'C:/Users/Samin/Desktop/University/Term 7/Information Retrieval/Project/Data/IR_data_news_12k_positional_index_dic.json'
     try:
@@ -39,18 +37,6 @@ def openFiles():
             print("Origin File opened successfully!")
     except IOError:
         print("Error opening file.")
-
-    # Opening preprocessed file
-    file_path = 'C:/Users/Samin/Desktop/University/Term 7/Information Retrieval/Project/Data/IR_data_news_12k_preprocessed.json'
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            data_preprocessed = json.load(f)
-            print("Preprocessed File opened successfully!")
-    except IOError:
-        print("Error opening file.")
-
-    for docID, data in data_preprocessed.items():
-        docs[docID] = data['content']
 
     for docID, body in data_raw.items():
         N = N + 1
@@ -74,12 +60,8 @@ def normalize_vector(input):
     vector = []
     for term in input.items():
         vector.append(term[1])
-    print('Vector:')
-    print(vector)
     norm = math.sqrt(sum(x ** 2 for x in vector))
     normalized_vector = [x / norm for x in vector]
-    print('Normalized:')
-    print(normalized_vector)
     return normalized_vector
 
 
@@ -156,33 +138,32 @@ def calc_vectors(query):
     return doc_vectors
 
 
-def cosine_similarity(query_vector):
-    global postings_list
-    similarities = {}
-
-    # Calculate cosine similarity between query vector and each document vector
-    for doc_id, doc_vector in postings_list.items():
-        dot_product = 0
-        query_norm = 0
-        doc_norm = 0
-
-        # Calculate dot product and vector norms
-        for term in query_vector:
-            if term in doc_vector:
-                dot_product += query_vector[term] * doc_vector[term]
-            query_norm += query_vector[term] ** 2
-        for term in doc_vector:
-            doc_norm += doc_vector[term] ** 2
-
-        # Calculate cosine similarity
-        if query_norm != 0 and doc_norm != 0:
-            similarity = dot_product / (math.sqrt(query_norm) * math.sqrt(doc_norm))
-            similarities[doc_id] = similarity
-
-    # Sort the similarities in descending order
-    sorted_similarities = sorted(similarities.items(), key=lambda x: x[1], reverse=True)
-
-    return sorted_similarities
+# def cosine_similarity(query_vector,doc_vectors):
+#     similarities = {}
+#
+#     # Calculate cosine similarity between query vector and each document vector
+#     for doc_vector in doc_vectors:
+#         dot_product = 0
+#         query_norm = 0
+#         doc_norm = 0
+#
+#         # Calculate dot product and vector norms
+#         for term in query_vector:
+#             if term in doc_vector:
+#                 dot_product += query_vector[term] * doc_vector[term]
+#             query_norm += query_vector[term] ** 2
+#         for term in doc_vector:
+#             doc_norm += doc_vector[term] ** 2
+#
+#         # Calculate cosine similarity
+#         if query_norm != 0 and doc_norm != 0:
+#             similarity = dot_product / (math.sqrt(query_norm) * math.sqrt(doc_norm))
+#             similarities[doc_id] = similarity
+#
+#     # Sort the similarities in descending order
+#     sorted_similarities = sorted(similarities.items(), key=lambda x: x[1], reverse=True)
+#
+#     return sorted_similarities
 
 
 def queryProcessor(query):
@@ -200,11 +181,12 @@ def queryProcessor(query):
     # normalize query
     normalized_query_vector = {}
     normalized_query_vector = normalize_vector(query_tfidf)
-    # normazlise doc vectors
-    normalized_docs_vector = []
+    # normalize doc vectors
+    normalized_docs_vector = {}
     for docID,vector in docs_vectors.items():
-        normalized_docs_vector.append(normalize_vector(vector))
+        normalized_docs_vector[docID]=normalize_vector(vector)
     print(normalized_docs_vector)
+
 
 
 def main():
