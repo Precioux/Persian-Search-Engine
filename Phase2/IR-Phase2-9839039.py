@@ -3,6 +3,7 @@ import math
 from string import punctuation
 from hazm import *
 import re
+import math
 
 data = {}
 positional_index_dic = {}
@@ -20,7 +21,7 @@ def tf_idf(nt, ftd):
 
 
 def openFiles():
-    global data, positional_index_dic, N, postings_list,data_preprocessed,docs
+    global data, positional_index_dic, N, postings_list, data_preprocessed, docs
     # Opening positional index file
     file_path = 'C:/Users/Samin/Desktop/University/Term 7/Information Retrieval/Project/Data/IR_data_news_12k_positional_index_dic.json'
     try:
@@ -44,12 +45,12 @@ def openFiles():
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             data_preprocessed = json.load(f)
-            print("Origin File opened successfully!")
+            print("Preprocessed File opened successfully!")
     except IOError:
         print("Error opening file.")
 
-    for docID,data in data_preprocessed.items():
-        docs[docID]= data['content']
+    for docID, data in data_preprocessed.items():
+        docs[docID] = data['content']
 
     for docID, body in data_raw.items():
         N = N + 1
@@ -67,6 +68,19 @@ def openFiles():
                 ftd = data['count']
                 tfidf = tf_idf(nt, ftd)
                 postings_list[term].append({'docID': docID, 'tfidf': tfidf})
+
+
+def normalize_vector(input):
+    vector = []
+    for term in input.items():
+        vector.append(term[1])
+    print('Vector:')
+    print(vector)
+    norm = math.sqrt(sum(x ** 2 for x in vector))
+    normalized_vector = [x / norm for x in vector]
+    print('Normalized:')
+    print(normalized_vector)
+    return normalized_vector
 
 
 # preprocessing functions
@@ -122,11 +136,24 @@ def calculate_query_vector(query):
 
     return query_vector
 
+
 def calc_vectors(query):
-    global docs,postings_list
-    
+    global postings_list
+    doc_vectors = {}
+    for term in query.items():
+        list = postings_list[term[0]]
+        for l in range(len(list)):
+            docID = list[l]['docID']
+            if docID not in doc_vectors:
+                doc_vectors[docID] = {}
+            doc_vectors[docID][term[0]] = list[l]['tfidf']
 
+    for term,l in query.items():
+        for docID,list in doc_vectors.items():
+            if term not in list:
+                doc_vectors[docID][term] = 0
 
+    return doc_vectors
 
 
 def cosine_similarity(query_vector):
@@ -169,14 +196,21 @@ def queryProcessor(query):
     print(query_tfidf)
     # calculating available docs tf-idf
     docs_vectors = []
-    docs_vectors = calc_vectors(preprocessed_query)
+    docs_vectors = calc_vectors(query_tfidf)
+    # normalize query
+    normalized_query_vector = {}
+    normalized_query_vector = normalize_vector(query_tfidf)
+    # normazlise doc vectors
+    normalized_docs_vector = []
+    for docID,vector in docs_vectors.items():
+        normalized_docs_vector.append(normalize_vector(vector))
+    print(normalized_docs_vector)
 
 
 def main():
-    # inputQ = input('Enter Query : ')
+    inputQ = input('Enter Query : ')
     openFiles()
-    # queryProcessor(inputQ)
-    print(data_preprocessed.get('0'))
+    queryProcessor(inputQ)
 
 
 if __name__ == "__main__":
