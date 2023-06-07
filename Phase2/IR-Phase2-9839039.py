@@ -4,6 +4,7 @@ from string import punctuation
 from hazm import *
 import re
 import math
+import numpy as np
 
 data = {}
 positional_index_dic = {}
@@ -138,6 +139,33 @@ def calc_vectors(query):
     return doc_vectors
 
 
+def jaccard_similarity(query_vector, doc_vectors):
+    similarities = {}
+
+    for docID, doc_vector in doc_vectors.items():
+        print(f'Doc : {docID}')
+        q_vec = set(query_vector)
+        d_vec = set(doc_vector)
+        # UNION
+        union = list(set(q_vec) | set(d_vec))
+        print(f'union : {union}')
+        # INTERSECT
+        intersect = list(set(q_vec) & set(d_vec))
+        print(f'intersect : {intersect}')
+        # norms
+        norm_union = np.linalg.norm(union)
+        print(f'norm union : {norm_union}')
+        norm_intersect = np.linalg.norm(intersect)
+        print(f'norm intersect : {norm_intersect}')
+        similarities[docID] = norm_intersect / norm_union
+        print(f'sim {similarities[docID]}')
+
+    # Sort the similarities in descending order
+    sorted_similarities = sorted(similarities.items(), key=lambda x: x[1], reverse=True)
+
+    return sorted_similarities
+
+
 def cosine_similarity(query_vector, doc_vectors):
     similarities = {}
     # print(f'q vec : {query_vector}')
@@ -167,15 +195,15 @@ def cosine_similarity(query_vector, doc_vectors):
     return sorted_similarities
 
 
-def toPrint(sorted_docs):
-    global data
-    i = 0
-    for docID, score in sorted_docs:
-        print(f'docID : {docID} , score : {score}')
-        title = data[docID]['title']
-        url = data[docID]['url']
-        print(f'{i + 1}. DocID = {docID}  \n   Title = {title} \n   URL   = {url}')
-        i += 1
+# def toPrint(sorted_docs):
+#     global data
+#     i = 0
+#     for docID, score in sorted_docs:
+#         print(f'docID : {docID} , score : {score}')
+#         title = data[docID]['title']
+#         url = data[docID]['url']
+#         print(f'{i + 1}. DocID = {docID}  \n   Title = {title} \n   URL   = {url}')
+#         i += 1
 
 
 def queryProcessor(query):
@@ -196,8 +224,8 @@ def queryProcessor(query):
     for docID, vector in docs_vectors.items():
         normalized_docs_vector[docID] = normalize_vector(vector)
     c_sim = cosine_similarity(normalized_query_vector, normalized_docs_vector)
-    print(c_sim)
-    toPrint(c_sim)
+    j_sim = jaccard_similarity(normalized_query_vector,normalized_docs_vector)
+    print(j_sim)
 
 
 def main():
