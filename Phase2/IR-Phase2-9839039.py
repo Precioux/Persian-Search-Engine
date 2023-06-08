@@ -280,7 +280,6 @@ def toPrint(sorted_docs):
     for doc in sorted_docs:
         docID = doc[0]
         score = doc[1]
-        print(f'docID : {docID} , score : {score}')
         raw = data.get(docID)
         title = data[docID]['title']
         url = data[docID]['url']
@@ -311,14 +310,13 @@ def queryProcessor(query, mode):
             normalized_docs_vector[docID] = normalize_vector(vector)
         c_sim = cosine_similarity(normalized_query_vector, normalized_docs_vector)
         j_sim = jaccard_similarity(query_tfidf, docs_vectors)
-        print('Cosine:')
-        print(c_sim)
+        print('RESULTS BY COSINE SIMILARITY:')
         if len(c_sim) > 0:
             toPrint(c_sim)
         else:
             print('داده ای یافت نشد')
-        print('Jaccard:')
-        print(j_sim)
+        print('************************************************************************************')
+        print('RESULTS BY JACCUARD SIMILARITY:')
         if len(j_sim) > 0:
             toPrint(j_sim)
         else:
@@ -337,14 +335,13 @@ def queryProcessor(query, mode):
         c_sim_by_champion = cosine_similarity(normalized_query_vector, normalized_docs_vector_by_champion)
         docs_vector_by_champion = calc_vectors_by_champion(query_tfidf)
         j_sim_by_champion = jaccard_similarity(query_tfidf, docs_vector_by_champion)
-        print('Cosine:')
-        print(c_sim_by_champion)
+        print('RESULTS BY COSINE SIMILARITY:')
         if len(c_sim_by_champion) > 0:
             toPrint(c_sim_by_champion)
         else:
             print('داده ای یافت نشد')
-        print('Jaccard:')
-        print(j_sim_by_champion)
+        print('************************************************************************************')
+        print('RESULTS BY JACCUARD SIMILARITY:')
         if len(j_sim_by_champion) > 0:
             toPrint(j_sim_by_champion)
         else:
