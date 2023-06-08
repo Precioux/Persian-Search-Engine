@@ -328,10 +328,15 @@ def queryProcessor(query):
     j_sim_by_champion = jaccard_similarity(query_tfidf, docs_vector_by_champion)
     print('Cosine:')
     print(c_sim_by_champion)
-    print('Jaccard')
-    print(j_sim_by_champion)
-    toPrint(c_sim_by_champion)
-
+    if len(c_sim_by_champion) > 0:
+        toPrint(c_sim_by_champion)
+    else:
+        print('داده ای یافت نشد')
+    print('Jaccard:')
+    if len(j_sim_by_champion) > 0:
+        toPrint(j_sim_by_champion)
+    else:
+        print('داده ای یافت نشد')
 
 def main():
     inputQ = input('Enter Query : ')
