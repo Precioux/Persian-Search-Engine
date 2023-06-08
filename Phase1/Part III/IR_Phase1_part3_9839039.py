@@ -7,8 +7,9 @@ import re
 data = {}
 positional_index = {}
 
+
 def openFiles():
-    global data,positional_index
+    global data, positional_index
     # Opening positional index file
     file_path = 'C:/Users/Samin/Desktop/University/Term 7/Information Retrieval/Project/Data/IR_data_news_12k_positional_index_dic.json'
     try:
@@ -62,7 +63,7 @@ def to_stem(input_text):
 
 def toPrint(sorted_docs):
     global data
-    if len(sorted_docs)>100:
+    if len(sorted_docs) > 100:
         for i in range(0, 5):
             docID = sorted_docs[i][0]
             docScore = sorted_docs[i][1]
@@ -118,7 +119,7 @@ def findWords(query):
 
 
 def queryProcessor(query):
-    global data,positional_index
+    global data, positional_index
     # call funcs on query
     rejected_terms = findRejected(query)
     phrase_terms = findPhrases(query)
@@ -187,7 +188,7 @@ def queryProcessor(query):
                         rejected_docs.append(key)
         for docID in rejected_docs:
             if docID in scores:
-                del scores[docID] # remove docs with rejected words
+                del scores[docID]  # remove docs with rejected words
 
     sorted_docs = sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
