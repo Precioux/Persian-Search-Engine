@@ -73,10 +73,12 @@ def openFiles():
 
 def normalize_vector(input):
     vector = []
+    print(f'input: {input}')
     for term in input.items():
         vector.append(term[1])
     norm = math.sqrt(sum(x ** 2 for x in vector))
     normalized_vector = [x / norm for x in vector]
+    print(f'Normalized : {normalized_vector}')
     return normalized_vector
 
 
@@ -150,12 +152,10 @@ def calc_vectors(query):
                 for d in range(len(docs_of_term)):
                     if docs_of_term[d]['docID'] == docID:
                         doc_vectors[docID][t] = docs_of_term[d]['tfidf']
+    return doc_vectors
     # for docID,list in doc_vectors.items():
     #     print(f'docID : {docID}')
     #     print(list)
-
-
-
 
             # doc_vectors[docID][term[0]] = list[l]['tfidf']
 
@@ -167,23 +167,23 @@ def calc_vectors(query):
     # return doc_vectors
 
 
-# def calc_vectors(query):
-#     global postings_list
-#     doc_vectors = {}
-#     for term in query.items():
-#         list = postings_list[term[0]]
-#         for l in range(len(list)):
-#             docID = list[l]['docID']
-#             if docID not in doc_vectors:
-#                 doc_vectors[docID] = {}
-#             doc_vectors[docID][term[0]] = list[l]['tfidf']
+def calc_vectors_cosine(query):
+    global postings_list
+    doc_vectors = {}
+    for term in query.items():
+        list = postings_list[term[0]]
+        for l in range(len(list)):
+            docID = list[l]['docID']
+            if docID not in doc_vectors:
+                doc_vectors[docID] = {}
+            doc_vectors[docID][term[0]] = list[l]['tfidf']
+
+    for term, l in query.items():
+        for docID, list in doc_vectors.items():
+            if term not in list:
+                doc_vectors[docID][term] = 0
 #
-#     for term, l in query.items():
-#         for docID, list in doc_vectors.items():
-#             if term not in list:
-#                 doc_vectors[docID][term] = 0
-#
-#     return doc_vectors
+    return doc_vectors
 
 
 def jaccard_similarity(query_vector, doc_vectors):
@@ -262,18 +262,18 @@ def queryProcessor(query):
     query_tfidf = calculate_query_vector(preprocessed_query)
     # calculating available docs tf-idf
     docs_vectors = []
-    #
-    calc_vectors(query_tfidf)
-    # # normalize query
-    # normalized_query_vector = {}
-    # normalized_query_vector = normalize_vector(query_tfidf)
-    # # normalize doc vectors
-    # normalized_docs_vector = {}
-    # for docID, vector in docs_vectors.items():
-    #     normalized_docs_vector[docID] = normalize_vector(vector)
-    # c_sim = cosine_similarity(normalized_query_vector, normalized_docs_vector)
-    # j_sim = jaccard_similarity(normalized_query_vector,normalized_docs_vector)
-    # print(j_sim)
+    docs_vectors = calc_vectors(query_tfidf)
+    docs_vectors_eliminated = calc_vectors_cosine(query_tfidf)
+    # normalize query
+    normalized_query_vector = {}
+    normalized_query_vector = normalize_vector(query_tfidf)
+    # normalize doc vectors
+    normalized_docs_vector = {}
+    for docID, vector in docs_vectors_eliminated.items():
+        normalized_docs_vector[docID] = normalize_vector(vector)
+    c_sim = cosine_similarity(normalized_query_vector, normalized_docs_vector)
+    j_sim = jaccard_similarity(query_tfidf,docs_vectors)
+    print(j_sim)
 
 
 def main():
