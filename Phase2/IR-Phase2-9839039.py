@@ -10,6 +10,7 @@ data = {}
 positional_index_dic = {}
 postings_list = {}
 data_preprocessed = {}
+champion_list = {}
 docs = {}
 N = 0
 
@@ -19,6 +20,30 @@ def tf_idf(nt, ftd):
     tf = 1 + math.log(ftd) if ftd > 0 else 0
     idf = math.log(N / nt)
     return tf * idf
+
+
+def create_champion_list():
+    global positional_index_dic, champion_list
+    for term, postings in positional_index_dic.items():
+        # print(f'TERM : {term}')
+        postings_list = []
+        df = postings['total']['count']
+
+        for docID, data in postings.items():
+            if docID != 'total':
+                tf = data['count']
+                postings_list.append({'docID': docID, 'tf': tf})
+                # print(f'docID : {docID} tf : {tf}')
+        # Sort the postings list by TF in descending order
+        postings_list.sort(key=lambda x: x['tf'], reverse=True)
+
+        # Select the top N documents as champions
+        N = min(100, len(postings_list))  # Example: Select top 100 documents
+        champion_docs = [postings['docID'] for postings in postings_list[:N]]
+
+        champion_list[term] = champion_docs
+
+    return champion_list
 
 
 def openFiles():
@@ -69,6 +94,9 @@ def openFiles():
                 ftd = data['count']
                 tfidf = tf_idf(nt, ftd)
                 postings_list[term].append({'docID': docID, 'tfidf': tfidf})
+
+    # Creating champion list from positional index
+    print(create_champion_list())
 
 
 def normalize_vector(input):
@@ -157,7 +185,7 @@ def calc_vectors(query):
     #     print(f'docID : {docID}')
     #     print(list)
 
-            # doc_vectors[docID][term[0]] = list[l]['tfidf']
+    # doc_vectors[docID][term[0]] = list[l]['tfidf']
 
     # for term, l in query.items():
     #     for docID, list in doc_vectors.items():
@@ -182,7 +210,7 @@ def calc_vectors_cosine(query):
         for docID, list in doc_vectors.items():
             if term not in list:
                 doc_vectors[docID][term] = 0
-#
+    #
     return doc_vectors
 
 
@@ -190,15 +218,15 @@ def jaccard_similarity(query_vector, doc_vectors):
     similarities = {}
 
     for docID, doc_vector in doc_vectors.items():
-        print(f'Doc : {docID}')
+        # print(f'Doc : {docID}')
         q_vec = set(query_vector)
         d_vec = set(doc_vector)
         # UNION
         union = list(set(q_vec) | set(d_vec))
-        print(f'union : {union}')
+        # print(f'union : {union}')
         # INTERSECT
         intersect = list(set(q_vec) & set(d_vec))
-        print(f'intersect : {intersect}')
+        # print(f'intersect : {intersect}')
         # norms
         # norm_union = np.linalg.norm(union)
         # print(f'norm union : {norm_union}')
@@ -272,14 +300,14 @@ def queryProcessor(query):
     for docID, vector in docs_vectors_eliminated.items():
         normalized_docs_vector[docID] = normalize_vector(vector)
     c_sim = cosine_similarity(normalized_query_vector, normalized_docs_vector)
-    j_sim = jaccard_similarity(query_tfidf,docs_vectors)
+    j_sim = jaccard_similarity(query_tfidf, docs_vectors)
     print(j_sim)
 
 
 def main():
-    inputQ = input('Enter Query : ')
+    # inputQ = input('Enter Query : ')
     openFiles()
-    queryProcessor(inputQ)
+    # queryProcessor(inputQ)
 
 
 if __name__ == "__main__":
