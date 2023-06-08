@@ -288,62 +288,73 @@ def toPrint(sorted_docs):
         i += 1
 
 
-def queryProcessor(query):
+def queryProcessor(query, mode):
     global positional_index_dic, postings_list
     # preprocess query
     preprocessed_query_1 = re.sub(f'[{punctuation}؟،٪×÷»«]+', '', query)
     preprocessed_query = to_stem(to_remove_stop_words(to_tokenize(to_normalize(preprocessed_query_1))))
     # calculating tf-idf
     query_tfidf = calculate_query_vector(preprocessed_query)
-    # calculating available docs tf-idf
-    docs_vectors = []
-    docs_vectors_eliminated = []
-    # docs_vectors = calc_vectors(query_tfidf)
-    # docs_vectors_eliminated = calc_vectors_cosine(query_tfidf)
     # normalize query
     normalized_query_vector = {}
     normalized_query_vector = normalize_vector(query_tfidf)
-    # # normalize doc vectors
-    # normalized_docs_vector = {}
-    # for docID, vector in docs_vectors_eliminated.items():
-    #     normalized_docs_vector[docID] = normalize_vector(vector)
-    # c_sim = cosine_similarity(normalized_query_vector, normalized_docs_vector)
-    # j_sim = jaccard_similarity(query_tfidf, docs_vectors)
-    # print('Cosine:')
-    # print(c_sim)
-    # print('Jaccard')
-    # print(j_sim)
-    # CHAMPION LIST
-    print('CHAMPION LIST')
-    docs_vectors_eliminatied_by_champion = []
-    docs_vector_by_champion = []
-    docs_vectors_eliminatied_by_champion = calc_vectors_cosine_by_champion(query_tfidf)
-    normalized_query_vector = normalize_vector(query_tfidf)
-    # normalize doc vectors
-    normalized_docs_vector_by_champion = {}
-    for docID, vector in docs_vectors_eliminatied_by_champion.items():
-        normalized_docs_vector_by_champion[docID] = normalize_vector(vector)
-    c_sim_by_champion = cosine_similarity(normalized_query_vector, normalized_docs_vector_by_champion)
-    docs_vector_by_champion = calc_vectors_by_champion(query_tfidf)
-    j_sim_by_champion = jaccard_similarity(query_tfidf, docs_vector_by_champion)
-    print('Cosine:')
-    print(c_sim_by_champion)
-    if len(c_sim_by_champion) > 0:
-        toPrint(c_sim_by_champion)
+    if mode == 0:  # without champion list
+        print('ALL DATA')
+        # calculating available docs tf-idf
+        docs_vectors = []
+        docs_vectors_eliminated = []
+        docs_vectors = calc_vectors(query_tfidf)
+        docs_vectors_eliminated = calc_vectors_cosine(query_tfidf)
+        # normalize doc vectors
+        normalized_docs_vector = {}
+        for docID, vector in docs_vectors_eliminated.items():
+            normalized_docs_vector[docID] = normalize_vector(vector)
+        c_sim = cosine_similarity(normalized_query_vector, normalized_docs_vector)
+        j_sim = jaccard_similarity(query_tfidf, docs_vectors)
+        print('Cosine:')
+        print(c_sim)
+        if len(c_sim) > 0:
+            toPrint(c_sim)
+        else:
+            print('داده ای یافت نشد')
+        print('Jaccard:')
+        print(j_sim)
+        if len(j_sim) > 0:
+            toPrint(j_sim)
+        else:
+            print('داده ای یافت نشد')
     else:
-        print('داده ای یافت نشد')
-    print('Jaccard:')
-    if len(j_sim_by_champion) > 0:
-        toPrint(j_sim_by_champion)
-    else:
-        print('داده ای یافت نشد')
+        # CHAMPION LIST
+        print('CHAMPION LIST')
+        docs_vectors_eliminatied_by_champion = []
+        docs_vector_by_champion = []
+        docs_vectors_eliminatied_by_champion = calc_vectors_cosine_by_champion(query_tfidf)
+        normalized_query_vector = normalize_vector(query_tfidf)
+        # normalize doc vectors
+        normalized_docs_vector_by_champion = {}
+        for docID, vector in docs_vectors_eliminatied_by_champion.items():
+            normalized_docs_vector_by_champion[docID] = normalize_vector(vector)
+        c_sim_by_champion = cosine_similarity(normalized_query_vector, normalized_docs_vector_by_champion)
+        docs_vector_by_champion = calc_vectors_by_champion(query_tfidf)
+        j_sim_by_champion = jaccard_similarity(query_tfidf, docs_vector_by_champion)
+        print('Cosine:')
+        print(c_sim_by_champion)
+        if len(c_sim_by_champion) > 0:
+            toPrint(c_sim_by_champion)
+        else:
+            print('داده ای یافت نشد')
+        print('Jaccard:')
+        print(j_sim_by_champion)
+        if len(j_sim_by_champion) > 0:
+            toPrint(j_sim_by_champion)
+        else:
+            print('داده ای یافت نشد')
+
 
 def main():
     inputQ = input('Enter Query : ')
     openFiles()
-    queryProcessor(inputQ)
-
-
+    queryProcessor(inputQ, 1)
 
 
 if __name__ == "__main__":
